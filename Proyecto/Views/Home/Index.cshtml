@@ -1,8 +1,69 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Bill Page";
 }
+<script>
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+    let editIndex = -1;
+
+    function addBill() {
+      let bills = JSON.parse(localStorage.getItem("bills")) || [];
+      let newDescription = document.getElementById("newDescription").value;
+      let newPrice = document.getElementById("newPrice").value;
+      if (editIndex === -1) {
+        bills.push({ description: newDescription, price: newPrice });
+      } else {
+        bills[editIndex] = { description: newDescription, price: newPrice };
+        editIndex = -1;
+      }
+      localStorage.setItem("bills", JSON.stringify(bills));
+      showbills();
+      document.getElementById("newDescription").value = "";
+      document.getElementById("newPrice").value = "";
+      document.getElementById("AddBtn").innerHTML = "Add";
+    }
+
+    function editBill(index) {
+      let bills = JSON.parse(localStorage.getItem("bills")) || [];
+      editIndex = index;
+      document.getElementById("newDescription").value = bills[index].description;
+      document.getElementById("newPrice").value = bills[index].price;
+      document.getElementById("AddBtn").innerHTML = "Update";
+    }
+
+    function deleteBill(index) {
+      let bills = JSON.parse(localStorage.getItem("bills")) || [];
+      bills.splice(index, 1);
+      localStorage.setItem("bills", JSON.stringify(bills));
+      showbills();
+    }
+
+    function showbills() {
+      let bills = JSON.parse(localStorage.getItem("bills")) || [];
+      let list = "<ul class='list-group'>";
+      for (let i = 0; i < bills.length; i++) {
+        list += "<li class='list-group-item d-flex justify-content-between'>" + bills[i].description + " - " + bills[i].price + " - Actions: " +
+          "<button class='btn btn-warning btn-sm mr-2' onclick='editBill(" + i + ")'>Edit</button>" + " " +
+          "<button class='btn btn-danger btn-sm' onclick='deleteBill(" + i + ")'>Delete</button></li>";
+      }
+      list += "</ul>";
+      document.getElementById("listBills").innerHTML = list;
+    }
+</script>
+<body onload="showbills()">
+  <div class="container" style="background-color: #f2f2f2; padding: 20px;">
+    <h1 class="text-center">Bills</h1>
+    <div class="form-group">
+      <label for="newDescription">Description</label>
+      <input type="text" class="form-control" id="newDescription">
+    </div>
+    <div class="form-group">
+      <label for="newPrice">Price</label>
+      <input type="number" class="form-control" id="newPrice">
+    </div>
+    <div class="text-center">
+      <button id="AddBtn" class="btn btn-primary" onclick="addBill()">Add</button>
+    </div>
+    <div id="listBills" class="mt-3">
+    </div>
+  </div>
+</body>
