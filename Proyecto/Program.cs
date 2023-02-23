@@ -1,8 +1,12 @@
+
+using Proyecto.Models;
+using Proyecto.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-
+builder.Services.AddSingleton<IDataBase>(db => new DataBase(new PrograWebContext()));
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
