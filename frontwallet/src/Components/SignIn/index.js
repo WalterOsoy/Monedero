@@ -1,117 +1,83 @@
-import * as React from 'react';
-import { Field, Form, FormSpy } from 'react-final-form';
-import Box from '@mui/material/Box';
-import Link from '@mui/material/Link';
-import Typography from './modules/components/Typography';
-import AppFooter from './modules/views/AppFooter';
-import AppAppBar from './modules/views/AppAppBar';
-import AppForm from './modules/views/AppForm';
-import { email, required } from './modules/form/validation';
-import RFTextField from './modules/form/RFTextField';
-import FormButton from './modules/form/FormButton';
-import FormFeedback from './modules/form/FormFeedback';
-import withRoot from './modules/withRoot';
+import React, { useState } from "react";
+import LockIcon from '@mui/icons-material/Lock';
+import { Avatar, Button, Checkbox, Container, FormControlLabel, Grid, Link, TextField, Typography } from "@mui/material";
+import walletLogin from '../../assets/walletLogin.png'
+import { useNavigate } from "react-router-dom";
 
-function SignIn() {
-  const [sent, setSent] = React.useState(false);
+export default function LoginPage() {
+  const [userName, setuserName] = useState("");
+  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
 
-  const validate = (values) => {
-    const errors = required(['email', 'password'], values);
-
-    if (!errors.email) {
-      const emailError = email(values.email);
-      if (emailError) {
-        errors.email = emailError;
-      }
-    }
-
-    return errors;
-  };
-
-  const handleSubmit = () => {
-    setSent(true);
+  const handleLogin = (e) => {
+    // Handle login logic here
+    navigate('/Accounts', { state: { userName } });
   };
 
   return (
-    <React.Fragment>
-      <AppAppBar />
-      <AppForm>
-        <React.Fragment>
-          <Typography variant="h3" gutterBottom marked="center" align="center">
-            Sign In
-          </Typography>
-          <Typography variant="body2" align="center">
-            {'Not a member yet? '}
-            <Link
-              href="/premium-themes/onepirate/sign-up/"
-              align="center"
-              underline="always"
-            >
-              Sign Up here
-            </Link>
-          </Typography>
-        </React.Fragment>
-        <Form
-          onSubmit={handleSubmit}
-          subscription={{ submitting: true }}
-          validate={validate}
-        >
-          {({ handleSubmit: handleSubmit2, submitting }) => (
-            <Box component="form" onSubmit={handleSubmit2} noValidate sx={{ mt: 6 }}>
-              <Field
-                autoComplete="email"
-                autoFocus
-                component={RFTextField}
-                disabled={submitting || sent}
-                fullWidth
-                label="Email"
+    <div style={{ backgroundImage: `url(${walletLogin})`, width: '100%', height: '100vh', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Container component="main" maxWidth="xs" style={{ background: 'rgba(255, 255, 255, 0.7)', height: '400px', padding: '20px', borderRadius: '8px' }}>
+        <div >
+          <Grid container direction="column" justifyContent="center" alignItems="center" >
+            <Avatar>
+              <LockIcon />
+            </Avatar>
+            <Typography component="h1" variant="h5">
+              Sign in
+            </Typography>
+            <form onSubmit={handleLogin}>
+              <TextField
+                variant="outlined"
                 margin="normal"
-                name="email"
                 required
-                size="large"
-              />
-              <Field
                 fullWidth
-                size="large"
-                component={RFTextField}
-                disabled={submitting || sent}
+                id="userName"
+                label="userName"
+                name="userName"
+                autoFocus
+                value={userName}
+                onChange={(e) => setuserName(e.target.value)}
+              />
+              <TextField
+                variant="outlined"
+                margin="normal"
                 required
+                fullWidth
                 name="password"
-                autoComplete="current-password"
                 label="Password"
                 type="password"
-                margin="normal"
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
               />
-              <FormSpy subscription={{ submitError: true }}>
-                {({ submitError }) =>
-                  submitError ? (
-                    <FormFeedback error sx={{ mt: 2 }}>
-                      {submitError}
-                    </FormFeedback>
-                  ) : null
-                }
-              </FormSpy>
-              <FormButton
-                sx={{ mt: 3, mb: 2 }}
-                disabled={submitting || sent}
-                size="large"
-                color="secondary"
+              <FormControlLabel
+                control={<Checkbox value="remember" color="primary" />}
+                label="Remember me"
+              />
+              <Button
+                type="submit"
                 fullWidth
+                variant="contained"
+                color="primary"
               >
-                {submitting || sent ? 'In progress…' : 'Sign In'}
-              </FormButton>
-            </Box>
-          )}
-        </Form>
-        <Typography align="center">
-          <Link underline="always" href="/premium-themes/onepirate/forgot-password/">
-            Forgot password?
-          </Link>
-        </Typography>
-      </AppForm>
-      <AppFooter />
-    </React.Fragment>
+                Sign In
+              </Button>
+              <Grid container>
+                <Grid item xs>
+                  <Link href="#" variant="body2">
+                    Forgot password?
+                  </Link>
+                </Grid>
+                <Grid item>
+                  <Link href="#" variant="body2">
+                    {"Don't have an account? Sign Up"}
+                  </Link>
+                </Grid>
+              </Grid>
+            </form>
+          </Grid>
+        </div>
+      </Container>
+    </div>
   );
 }
-
-export default withRoot(SignIn);
