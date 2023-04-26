@@ -1,11 +1,13 @@
 ﻿using BackendWallet.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BackendWallet.Controllers
 {
-    [Route("[controller]")]
     [ApiController]
+    [Route("[controller]")]
     public class AccountController : ControllerBase
     {
         private readonly WalletContext db;
@@ -47,6 +49,14 @@ namespace BackendWallet.Controllers
         {
             body.CreationDate = DateTime.Now;
             db.Accounts.Add(body);
+            db.SaveChanges();
+            return body;
+        }
+
+        [HttpPost("bills")]
+        public ActionResult<Account> Bills(Account body)
+        {
+            db.Update(body);
             db.SaveChanges();
             return body;
         }

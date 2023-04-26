@@ -1,9 +1,9 @@
 
 import ApiService from "../../Services/ApiServices";
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation } from 'react-router-dom';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import { Grid, IconButton, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, Typography, Checkbox, Table, Button } from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
+import { Grid, IconButton, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, Typography, Checkbox, Table, Button, Modal, Box, TextField, Select, MenuItem } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 
 const headCells = [
@@ -13,20 +13,67 @@ const headCells = [
     { id: 'amount', label: 'Amount' },
     { id: 'creationDate', label: 'Creation Date' },
 ];
+const style = {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    width: 400,
+    bgcolor: 'background.paper',
+    p: 4,
+};
 
 export default function Accounts() {
     const apiService = new ApiService();
     const location = useLocation();
     const userName = location.state?.userName;
-    const [rows, setRows] = React.useState([]);
-    const [selected, setSelected] = React.useState(rows);
+    const [rows, setRows] = useState([]);
+    const [selected, setSelected] = useState(rows);
+
+    const [open, setOpen] = useState(false);
+    const handleOpen = () => setOpen(true);
+    const handleClose = () => setOpen(false);
+
+    const [userInfo, setUserInfo] = useState([]);
+    const [accountType, setAccountType] = useState("");
+    const [amount, setAmount] = useState("");
+    const [description, setDescription] = useState("");
+
     useEffect(() => {
         apiService.get(`/Account/${userName}`).then(response => {
             setRows(response.data)
         }).catch(error => {
             console.log(error)
         });
+
+        apiService.get(`/Users/${userName}`).then(response => {
+            console.log(response.data)
+            setUserInfo(response.data)
+        }).catch(error => {
+            console.log(error)
+        });
     }, [userName]);
+
+    const handleLogin = (e) => {
+        apiService.post(`/Account`, {
+            "userId": userInfo.id,
+            "accountType": accountType,
+            "creationDate": new Date(),
+            "amount": amount,
+            "description": description
+        }).then(response => {
+            if (response.status === 200) {
+                apiService.get(`/Account/${userName}`).then(response => {
+                    setRows(response.data)
+                    handleClose()
+                }).catch(error => {
+                    console.log(error)
+                });
+            }
+        }).catch(error => {
+            console.log(error)
+        });
+    };
 
     return (
         <React.Fragment>
@@ -34,24 +81,90 @@ export default function Accounts() {
                 <Typography fontWeight="400" variant="h3" style={{ lineHeight: '143%' }}>
                     User Name: {userName}
                 </Typography>
-                <Button variant="outlined">
+                <Button variant="outlined" onClick={handleOpen}>
                     Create New Account
                 </Button>
                 <Grid item xs={8}>
-                    <EnhancedTable rows={rows} selected={selected} setSelected={setSelected} userName={userName} />
+                    <EnhancedTable rows={rows} selected={selected} setSelected={setSelected} userName={userName} setRows={setRows} />
                 </Grid>
             </Grid>
+            <Modal
+                open={open}
+                onClose={handleClose}
+                aria-labelledby="modal-modal-title"
+                aria-describedby="modal-modal-description"
+            >
+                <Box sx={style}>
+                    <Grid container direction="column" justifyContent="center" alignItems="center" >
+                        <Typography component="h1" variant="h5">
+                            Create New Account
+                        </Typography>
+                        <Select
+                            required
+                            id="simple-select"
+                            placeholder={'Select one'}
+                            onChange={(event) => setAccountType(event.target.value)}
+                            displayEmpty
+                            fullWidth
+                        >
+                            <MenuItem value="" disabled>Select one</MenuItem>
+                            <MenuItem id="SavingQ" value="Saving Q">Saving Q</MenuItem>
+                            <MenuItem id="Saving$" value="Saving $">Saving $</MenuItem>
+                            <MenuItem id="MonetaryQ" value="Monetary Q">Monetary Q</MenuItem>
+                            <MenuItem id="Monetary$" value="Monetary $">Monetary $</MenuItem>
+                        </Select>
+                        <TextField
+                            variant="outlined"
+                            margin="normal"
+                            required
+                            fullWidth
+                            id="Amount"
+                            label="Amount"
+                            name="Amount"
+                            autoFocus
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                        />
+                        <TextField
+                            variant="outlined"
+                            margin="normal"
+                            required
+                            fullWidth
+                            id="Description"
+                            label="Description"
+                            name="Description"
+                            autoFocus
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                        />
+                        <Button
+                            type="submit"
+                            fullWidth
+                            variant="contained"
+                            color="primary"
+                            onClick={handleLogin}
+                        >
+                            Create
+                        </Button>
+                    </Grid>
+                </Box>
+            </Modal>
         </React.Fragment>
     );
 }
 
-function EnhancedTableHead({ columns, onSelectAllClick, numSelected, rowCount, selected, userName }) {
+function EnhancedTableHead({ columns, onSelectAllClick, numSelected, rowCount, selected, userName, setRows }) {
     const apiService = new ApiService();
 
     const onDelete = () => {
         selected.map((item) => {
             apiService.delete(`/Account/${userName}/${item.id}`).then(response => {
-                console.log(response)
+
+            }).catch(error => {
+                console.log(error)
+            });
+            apiService.get(`/Account/${userName}`).then(response => {
+                setRows(response.data)
             }).catch(error => {
                 console.log(error)
             });
@@ -78,7 +191,7 @@ function EnhancedTableHead({ columns, onSelectAllClick, numSelected, rowCount, s
                 ))}
                 {numSelected > 0 && (
                     <TableCell key={9}>
-                        <IconButton>
+                        <IconButton onClick={onDelete}>
                             <DeleteIcon />
                         </IconButton>
                     </TableCell>
@@ -88,9 +201,15 @@ function EnhancedTableHead({ columns, onSelectAllClick, numSelected, rowCount, s
     );
 }
 
-function EnhancedTable({ selected, setSelected, rows, userName }) {
-    const [page, setPage] = React.useState(0);
-    const [rowsPerPage, setRowsPerPage] = React.useState(5);
+function EnhancedTable({ selected, setSelected, rows, userName, setRows }) {
+    const [page, setPage] = useState(0);
+    const [rowsPerPage, setRowsPerPage] = useState(5);
+    const [open, setOpen] = useState(false);
+    const [selectedRow, setSelectedRow] = useState(false);
+    const [amount, setAmount] = useState("");
+    const handleOpen = () => setOpen(true);
+    const handleClose = () => setOpen(false);
+    const apiService = new ApiService();
 
     const handleSelectAllClick = (event) => {
         if (event.target.checked) {
@@ -136,8 +255,28 @@ function EnhancedTable({ selected, setSelected, rows, userName }) {
     function formatMoney(number) {
         return number.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
     }
+    const handleLogin = (e) => {
+        apiService.post(`/Account/bills`, {
+            "id": selectedRow.id,
+            "userId": selectedRow.userId,
+            "accountType": selectedRow.accountType,
+            "creationDate": selectedRow.creationDate,
+            "amount": selectedRow.amount + Number(amount),
+            "description": selectedRow.description,
+        }).then(response => {
+            if (response.status === 200) {
+                apiService.get(`/Account/${userName}`).then(response => {
+                    setRows(response.data)
+                    handleClose()
+                }).catch(error => {
+                    console.log(error)
+                });
+            }
+        }).catch(error => {
+            console.log(error)
+        });
+    };
     return (
-        // <Paper sx={{ width: '100%', mb: 2 }} style={{ borderRadius: '0px 0px 8px 8px', paddingBottom: '10px' }}>
         <React.Fragment>
             <TableContainer>
                 <Table
@@ -152,6 +291,7 @@ function EnhancedTable({ selected, setSelected, rows, userName }) {
                         rowCount={rows.length}
                         selected={selected}
                         userName={userName}
+                        setRows={setRows}
                     />
                     <TableBody>
                         {rows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
@@ -160,7 +300,6 @@ function EnhancedTable({ selected, setSelected, rows, userName }) {
                                 return (
                                     <TableRow
                                         hover
-                                        onClick={(event) => handleClick(event, row)}
                                         role="checkbox"
                                         aria-checked={isItemSelected}
                                         tabIndex={-1}
@@ -169,6 +308,7 @@ function EnhancedTable({ selected, setSelected, rows, userName }) {
                                     >
                                         <TableCell padding="checkbox">
                                             <Checkbox
+                                                onClick={(event) => handleClick(event, row)}
                                                 color="primary"
                                                 checked={isItemSelected}
                                             />
@@ -179,8 +319,8 @@ function EnhancedTable({ selected, setSelected, rows, userName }) {
                                         <TableCell><Typography fontWeight="400" >{formatMoney(row.amount)}</Typography></TableCell>
                                         <TableCell><Typography fontWeight="400" >{formatDate(row.creationDate)}</Typography></TableCell>
                                         <TableCell>
-                                            <IconButton>
-                                                <MoreVertIcon color='primary' />
+                                            <IconButton onClick={() => { setSelectedRow(row); handleOpen() }}>
+                                                <EditIcon color='primary' />
                                             </IconButton>
                                         </TableCell>
                                     </TableRow>
@@ -200,6 +340,42 @@ function EnhancedTable({ selected, setSelected, rows, userName }) {
                     onRowsPerPageChange={handleChangeRowsPerPage}
                 />
             )}
+            <Modal
+                open={open}
+                onClose={handleClose}
+                aria-labelledby="modal-modal-title"
+                aria-describedby="modal-modal-description"
+            >
+                <Box sx={style}>
+                    <Grid container direction="column" justifyContent="center" alignItems="center" >
+                        <Typography component="h1" variant="h5">
+                            {selectedRow.id}. {selectedRow.accountType}
+                        </Typography>
+                        Write the amount you want to add or debit
+                        <TextField
+                            variant="outlined"
+                            margin="normal"
+                            required
+                            fullWidth
+                            id="Amount"
+                            label="Amount"
+                            name="Amount"
+                            autoFocus
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                        />
+                        <Button
+                            type="submit"
+                            fullWidth
+                            variant="contained"
+                            color="primary"
+                            onClick={handleLogin}
+                        >
+                            Save Change
+                        </Button>
+                    </Grid>
+                </Box>
+            </Modal>
         </React.Fragment>
         // </Paper>
     );
